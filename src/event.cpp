@@ -1,18 +1,16 @@
 #include "event.h"
-
 #include <TFile.h>
 #include <TH1D.h>
 #include <TSystem.h>
 #include <TString.h>
 #include <iostream>
+#include <algorithm>
 
-// === Constructor ===
-event::event(const std::string& filename) {
-    read_file(filename);
+event::event(const std::string& filename, config& cfg) {
+    read_file(filename, cfg);
 }
 
-// === File Reading ===
-void event::read_file(const std::string& filename) {
+void event::read_file(const std::string& filename, config& cfg) {
     TFile* file = TFile::Open(filename.c_str(), "READ");
     if (!file || file->IsZombie()) {
         std::cerr << "Failed to open file: " << filename << "\n";
@@ -26,32 +24,71 @@ void event::read_file(const std::string& filename) {
     TH1D* hSample = dynamic_cast<TH1D*>(file->Get("hSampleCounter"));
     nsamples = hSample ? static_cast<int>(hSample->GetBinContent(1)) : 1;
 
-    std::vector<int> pids_to_check = {0, 211, -211, 321, -321, 2212, -2212};
-    for (int pid : pids_to_check) {
-        std::string prefix = (pid == 0) ? "Q_charged" : "Q_pid" + std::to_string(pid);
-        TString test = TString::Format("Re%s_n0", prefix.c_str());
-        if (!file->GetListOfKeys()->Contains(test)) continue;
+    detected_n_max = 0;
 
-        read_qvectors(pid, prefix);
-        available_pids.push_back(pid);
+    if (cfg.calculate_charged) {
+        TString test = "ReQ_charged_n0";
+        if (file->GetListOfKeys()->Contains(test)) {
+            int local_n = read_qvectors(0);
+            detected_n_max = std::max(detected_n_max, local_n);
+            available_pids.push_back(0);
+        } else {
+            std::cerr << "Warning: Requested charged particles but Q_charged not found in file.\n";
+        }
+    }
+
+    for (int pid : cfg.pids) {
+        if (pid == 0) continue;
+        std::string prefix = "Q_pid" + std::to_string(pid);
+        TString test = TString::Format("Re%s_n0", prefix.c_str());
+
+        if (file->GetListOfKeys()->Contains(test)) {
+            int local_n = read_qvectors(pid);
+            detected_n_max = std::max(detected_n_max, local_n);
+            available_pids.push_back(pid);
+        } else {
+            std::cerr << "Warning: Requested PID " << pid << " not found in file.\n";
+        }
     }
 
     file->Close();
+
+    if (cfg.max_n > detected_n_max) {
+        std::cerr << "Warning: Requested max_n = " << cfg.max_n
+                  << " but only n ≤ " << detected_n_max << " found in file.\n";
+    }
+
+    bool has_vn4 = std::find(cfg.integrated_observables.begin(),
+                             cfg.integrated_observables.end(), "vn{4}") != cfg.integrated_observables.end();
+
+    if (has_vn4 && detected_n_max < 2 * cfg.max_n) {
+        std::cerr << "Warning: vn{4} requires Q-vectors up to 2×n = " << 2 * cfg.max_n
+                  << " but only n ≤ " << detected_n_max << " found in file. vn{4} will be disabled.\n";
+
+        cfg.integrated_observables.erase(
+            std::remove(cfg.integrated_observables.begin(),
+                        cfg.integrated_observables.end(), "vn{4}"),
+            cfg.integrated_observables.end()
+        );
+    }
 }
 
-// === Q-vector and Q0 reading ===
-void event::read_qvectors(int pid, const std::string& prefix) {
-    const int n_max = 6;
-    std::vector<std::vector<std::complex<double>>> qn_list(n_max + 1);
+int event::read_qvectors(int pid) {
+    std::string prefix = (pid == 0) ? "Q_charged" : ("Q_pid" + std::to_string(pid));
+    int found_n_max = -1;
+
+    std::vector<std::vector<std::vector<std::complex<double>>>> qn_list;
     std::vector<std::vector<double>> q0;
 
-    for (int n = 0; n <= n_max; ++n) {
+    for (int n = 0; ; ++n) {
         TString name_re = TString::Format("Re%s_n%d", prefix.c_str(), n);
         TString name_im = TString::Format("Im%s_n%d", prefix.c_str(), n);
 
         TH2D* hre = dynamic_cast<TH2D*>(gDirectory->Get(name_re));
         TH2D* him = dynamic_cast<TH2D*>(gDirectory->Get(name_im));
-        if (!hre || !him) continue;
+        if (!hre || !him) break;
+
+        found_n_max = n;
 
         if (!binning_initialized) {
             init_binning(hre);
@@ -65,7 +102,8 @@ void event::read_qvectors(int pid, const std::string& prefix) {
         for (int ix = 0; ix < nx; ++ix)
             for (int iy = 0; iy < ny; ++iy)
                 qn[ix][iy] = {hre->GetBinContent(ix + 1, iy + 1), him->GetBinContent(ix + 1, iy + 1)};
-        qn_list[n] = std::move(qn);
+        
+        qn_list.push_back(std::move(qn));
 
         if (n == 0) {
             std::vector<std::vector<double>> m0(nx, std::vector<double>(ny));
@@ -78,9 +116,9 @@ void event::read_qvectors(int pid, const std::string& prefix) {
 
     Qn[pid] = std::move(qn_list);
     Q0[pid] = std::move(q0);
+    return found_n_max;
 }
 
-// === Binning ===
 void event::init_binning(const TH2D* hist) {
     int nx = hist->GetNbinsX();
     int ny = hist->GetNbinsY();
@@ -93,7 +131,6 @@ void event::init_binning(const TH2D* hist) {
         pt_centers[iy - 1] = hist->GetYaxis()->GetBinCenter(iy);
 }
 
-// === Qn Access ===
 std::vector<std::vector<std::complex<double>>> event::get_Qn(int pid, int n) const {
     return Qn.at(pid).at(n);
 }
@@ -134,7 +171,6 @@ std::vector<std::complex<double>> event::get_Qn_integrated_over_pt(int pid, int 
     return result;
 }
 
-// === Q0 Access ===
 std::vector<std::vector<double>> event::get_Q0(int pid) const {
     return Q0.at(pid);
 }
