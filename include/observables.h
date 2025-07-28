@@ -39,9 +39,17 @@ private:
 
     // helper functions
     double weighted_average(const std::vector<double>& values, const std::vector<double>& weights);
-    std::vector<double> weighted_average(const std::vector<std::vector<double>>& values, const std::vector<double>& weights);
+    std::vector<double> weighted_average(
+    const std::vector<std::vector<double>>& values,
+    const std::vector<std::vector<double>>& weights);
     double compute_scalar_jackknife_error(const std::vector<double>& values, const std::vector<double>& weights);
-    std::vector<double> compute_vector_jackknife_error(const std::vector<std::vector<double>>& values, const std::vector<double>& weights);
+    std::vector<double> compute_vector_jackknife_error(
+    const std::vector<std::vector<double>>& vals,
+    const std::vector<std::vector<double>>& weights);
+
+
+    bool requires_n(const std::string& name) const;
+
 };
 
 #endif

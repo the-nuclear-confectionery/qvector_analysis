@@ -10,6 +10,7 @@
 #include <vector>
 #include <string>
 #include <algorithm>
+#include <numeric>
 
 int main(int argc, char** argv) {
     if (argc < 3) {
@@ -69,10 +70,25 @@ int main(int argc, char** argv) {
     for (const auto& [name, vec] : obs.vector_values) {
         const auto& err = obs.vector_errors.at(name);
         std::cout << "  " << name << ":\n";
+
+        std::vector<double> bin_centers;
+
+        if (name.find("pt") != std::string::npos) {
+            bin_centers = events[0].pt_centers;
+        } else if (name.find("eta") != std::string::npos) {
+            bin_centers = events[0].eta_centers;
+        } else {
+            bin_centers.resize(vec.size());
+            std::iota(bin_centers.begin(), bin_centers.end(), 0); // fallback index
+        }
+
+
         for (size_t i = 0; i < vec.size(); ++i) {
-            std::cout << "    [" << i << "] = " << vec[i] << " ± " << err[i] << "\n";
+            std::cout << " " << bin_centers[i]
+                      << " " << vec[i] << " " << err[i] << "\n";
         }
     }
+
 
     return 0;
 }

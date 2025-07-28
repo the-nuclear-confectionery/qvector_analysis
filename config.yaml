@@ -1,8 +1,9 @@
-pids: [211, -211, 321, -321]
+#pids: [211, -211, 321, -321]
+pids: []
 max_n: 3
 
 cuts:
-  eta_cut: 0.8
+  eta_cut: 0.5
   pt_min: 0.15
   pt_max: 2.0
 
@@ -10,4 +11,4 @@ calculate_charged: true
 
 observables:
   integrated: ["M", "mean_pT", "vn{2}", "vn{EP}", "vn{4}"]
-  differential: ["dN/deta", "dN/dpt", "vn{2}_pt", "vn{2}_eta"]
+  differential: ["dN/deta", "dN/2piptdptdy", "vn{2}_pt", "vn{2}_eta"]
