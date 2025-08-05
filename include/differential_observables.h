@@ -50,18 +50,18 @@ inline std::vector<std::pair<double, double>> vn2_pt(event& ev, cuts& cut, int p
     const auto& Q0_all = ev.get_Q0(pid);
 
     std::complex<double> Qn_ref = {0.0, 0.0};
-    double Mq = 0.0;
+    double M = 0.0;
     for (size_t i = 0; i < ev.eta_centers.size(); ++i) {
         if (std::abs(ev.eta_centers[i]) > cut.eta_cut) continue;
         for (size_t j = 0; j < ev.pt_centers.size(); ++j) {
             double pt = ev.pt_centers[j];
             if (pt < cut.pt_min || pt > cut.pt_max) continue;
             Qn_ref += Qn_all[i][j];
-            Mq += Q0_all[i][j];
+            M += Q0_all[i][j];
         }
     }
 
-    double c2_ref = (Mq > 1.0) ? (std::norm(Qn_ref) - Mq) / (Mq * (Mq - 1.0)) : 0.0;
+    double c2_ref = (M > 1.0) ? (std::norm(Qn_ref) - M) / (M * (M - 1.0)) : 0.0;
 
     std::vector<std::pair<double, double>> result;
     result.reserve(ev.pt_centers.size());
@@ -73,13 +73,13 @@ inline std::vector<std::pair<double, double>> vn2_pt(event& ev, cuts& cut, int p
         }
 
         std::complex<double> Pn = Qn_pt[j];
-        double Mp = Q0_pt[j];
-        double Mpq = Q0_pt[j];
+        double mp = Q0_pt[j];
+        double mq = mp;
 
-        double denom = Mp * (Mq - Mpq);
-        double two_prime = (denom > 0.0) ? (std::real(Pn * std::conj(Qn_ref)) - Mpq) / denom : 0.0;
+        double denom = mp M - mq;
+        double two_prime = (denom > 0.0) ? (std::real(Pn * std::conj(Qn_ref)) - mq) / denom : 0.0;
         double vn2_val = (c2_ref > 0.0) ? two_prime / std::sqrt(c2_ref) : 0.0;
-        result.emplace_back(vn2_val, Mq * (Mq - 1.0));
+        result.emplace_back(vn2_val, denom);
     }
     return result;
 }
@@ -92,18 +92,18 @@ inline std::vector<std::pair<double, double>> vn2_eta(event& ev, cuts& cut, int 
     const auto& Q0_all = ev.get_Q0(pid);
 
     std::complex<double> Qn_ref = {0.0, 0.0};
-    double Mq = 0.0;
+    double M = 0.0;
     for (size_t i = 0; i < ev.eta_centers.size(); ++i) {
         if (std::abs(ev.eta_centers[i]) > cut.eta_cut) continue;
         for (size_t j = 0; j < ev.pt_centers.size(); ++j) {
             double pt = ev.pt_centers[j];
             if (pt < cut.pt_min || pt > cut.pt_max) continue;
             Qn_ref += Qn_all[i][j];
-            Mq += Q0_all[i][j];
+            M += Q0_all[i][j];
         }
     }
 
-    double c2_ref = (Mq > 1.0) ? (std::norm(Qn_ref) - Mq) / (Mq * (Mq - 1.0)) : 0.0;
+    double c2_ref = (M > 1.0) ? (std::norm(Qn_ref) - M) / (M * (M - 1.0)) : 0.0;
 
     std::vector<std::pair<double, double>> result;
     result.reserve(ev.eta_centers.size());
@@ -114,13 +114,13 @@ inline std::vector<std::pair<double, double>> vn2_eta(event& ev, cuts& cut, int 
         }
 
         std::complex<double> Pn = Qn_eta[i];
-        double Mp = Q0_eta[i];
-        double Mpq = Q0_eta[i];
+        double mq = Q0_eta[i];
+        double mq = mp;
 
-        double denom = Mp * (Mq - Mpq);
-        double two_prime = (denom > 0.0) ? (std::real(Pn * std::conj(Qn_ref)) - Mpq) / denom : 0.0;
+        double denom = mp*M - mq;
+        double two_prime = (denom > 0.0) ? (std::real(Pn * std::conj(Qn_ref)) - mq) / denom : 0.0;
         double vn2_val = (c2_ref > 0.0) ? two_prime / std::sqrt(c2_ref) : 0.0;
-        result.emplace_back(vn2_val, Mq * (Mq - 1.0));
+        result.emplace_back(vn2_val, denom);
     }
     return result;
 }
