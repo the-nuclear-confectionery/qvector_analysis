@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(ana)
+project(qvector_analysis)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -18,14 +18,14 @@ set(SOURCES
     src/output.cpp
 )
 
-add_executable(ana ${SOURCES})
+add_executable(qvector_analysis ${SOURCES})
 
-target_include_directories(ana PRIVATE
+target_include_directories(qvector_analysis PRIVATE
     ${ROOT_INCLUDE_DIRS}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-target_link_libraries(ana
+target_link_libraries(qvector_analysis
     ${ROOT_LIBRARIES}
     yaml-cpp
 )
