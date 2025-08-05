@@ -15,5 +15,5 @@ observables:
 
 output: 
   directory: "/u/kpala/git_repos/ana3/build/output"
-  prefix: "ana3"
+  prefix: "q_vector_analysis"
   format: "dat"

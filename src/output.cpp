@@ -90,7 +90,10 @@ void Output::write_all_differential(int pid, const std::string& outdir) const {
 
     // Write vn groups
     for (const auto& [base, harmonics] : harmonic_groups) {
-        std::string filename = outdir + "/" + base + ".dat";
+        std::string safe_base = base;
+        std::replace(safe_base.begin(), safe_base.end(), '/', '_');
+        std::string filename = outdir + "/" + safe_base + ".dat";
+
         std::ofstream out(filename);
         out << std::setprecision(8) << std::scientific;
 
@@ -125,7 +128,10 @@ void Output::write_all_differential(int pid, const std::string& outdir) const {
 
     // Write dN/deta and dN/2piptdptdy
     for (const auto& name : dndx_names) {
-        std::string filename = outdir + "/" + name + ".dat";
+        std::string safe_name = name;
+        std::replace(safe_name.begin(), safe_name.end(), '/', '_');
+        std::string filename = outdir + "/" + safe_name + ".dat";
+
         std::ofstream out(filename);
         out << std::setprecision(8) << std::scientific;
 
@@ -133,9 +139,9 @@ void Output::write_all_differential(int pid, const std::string& outdir) const {
         const auto& err = obs_.vector_errors.at(name);
 
         std::vector<double> bin_centers;
-        if (name.find("_pt_") != std::string::npos)
+        if (name.find("pt") != std::string::npos)
             bin_centers = events_[0].pt_centers;
-        else if (name.find("_eta_") != std::string::npos)
+        else if (name.find("eta") != std::string::npos)
             bin_centers = events_[0].eta_centers;
         else {
             bin_centers.resize(vec.size());
