@@ -12,3 +12,8 @@ calculate_charged: true
 observables:
   integrated: ["M", "mean_pT", "vn{2}", "vn{EP}", "vn{4}"]
   differential: ["dN/deta", "dN/2piptdptdy", "vn{2}_pt", "vn{2}_eta"]
+
+output: 
+  directory: "/u/kpala/git_repos/ana3/build/output"
+  prefix: "ana3"
+  format: "dat"

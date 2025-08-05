@@ -14,6 +14,10 @@ struct config {
     std::vector<std::string> integrated_observables;
     std::vector<std::string> differential_observables;
 
+
+    std::string output_directory = "output";
+    std::string output_prefix = "";
+    std::string output_format = "dat";
     static config load(const std::string& filename) {
         config cfg;
         YAML::Node node = YAML::LoadFile(filename);
@@ -27,6 +31,11 @@ struct config {
 
         cfg.integrated_observables = node["observables"]["integrated"].as<std::vector<std::string>>();
         cfg.differential_observables = node["observables"]["differential"].as<std::vector<std::string>>();
+
+        
+        cfg.output_directory = node["output"]["directory"] ? node["output"]["directory"].as<std::string>() : "output";
+        cfg.output_prefix    = node["output"]["prefix"] ? node["output"]["prefix"].as<std::string>() : "";
+        cfg.output_format    = node["output"]["format"] ? node["output"]["format"].as<std::string>() : "dat";
 
         return cfg;
     }

@@ -1,16 +1,15 @@
-
 #include "event.h"
 #include "cuts.h"
 #include "observables.h"
 #include "integrated_observables.h"
 #include "differential_observables.h"
+#include "output.h"
 #include "config.h"
 
 #include <iostream>
 #include <vector>
 #include <string>
 #include <algorithm>
-#include <numeric>
 
 int main(int argc, char** argv) {
     if (argc < 3) {
@@ -35,6 +34,8 @@ int main(int argc, char** argv) {
 
     // === Setup observables ===
     Observables obs;
+    std::vector<std::string> integrated_registered;
+    std::vector<std::string> differential_registered;
 
     // --- Register integrated observables ---
     for (const std::string& name : cfg.integrated_observables) {
@@ -42,7 +43,7 @@ int main(int argc, char** argv) {
         else if (name == "mean_pT")  obs.register_integrated(name, mean_pT);
         else if (name == "vn{EP}")   obs.register_integrated(name, vnEP);
         else if (name == "vn{2}")    obs.register_integrated(name, vn2);
-        else if (name == "vn{4}")    obs.register_integrated(name, vn4);  // will be removed if unsupported
+        else if (name == "vn{4}")    obs.register_integrated(name, vn4);
         else std::cerr << "Warning: Unknown integrated observable '" << name << "'\n";
     }
 
@@ -55,38 +56,16 @@ int main(int argc, char** argv) {
         else std::cerr << "Warning: Unknown differential observable '" << name << "'\n";
     }
 
-    // === Run observable evaluation ===
     obs.evaluate_all_integrated(events, cfg.cut, cfg.pids, cfg.max_n);
     obs.evaluate_all_differential(events, cfg.cut, cfg.pids, cfg.max_n);
 
-    // === Output ===
-    std::cout << "=== Integrated Observables ===\n";
-    for (const auto& [name, value] : obs.scalar_values) {
-        double err = obs.scalar_errors.at(name);
-        std::cout << "  " << name << " = " << value << " ± " << err << "\n";
-    }
 
-    std::cout << "\n=== Differential Observables ===\n";
-    for (const auto& [name, vec] : obs.vector_values) {
-        const auto& err = obs.vector_errors.at(name);
-        std::cout << "  " << name << ":\n";
+    Output output(cfg, obs, events);
+    std::string output_dir = output.build_output_path();
 
-        std::vector<double> bin_centers;
-
-        if (name.find("pt") != std::string::npos) {
-            bin_centers = events[0].pt_centers;
-        } else if (name.find("eta") != std::string::npos) {
-            bin_centers = events[0].eta_centers;
-        } else {
-            bin_centers.resize(vec.size());
-            std::iota(bin_centers.begin(), bin_centers.end(), 0); // fallback index
-        }
-
-
-        for (size_t i = 0; i < vec.size(); ++i) {
-            std::cout << " " << bin_centers[i]
-                      << " " << vec[i] << " " << err[i] << "\n";
-        }
+    for (int pid : cfg.pids) {
+        output.write_integrated(pid, output_dir);
+        output.write_all_differential(pid, output_dir);
     }
 
 

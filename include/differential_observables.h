@@ -76,7 +76,7 @@ inline std::vector<std::pair<double, double>> vn2_pt(event& ev, cuts& cut, int p
         double mp = Q0_pt[j];
         double mq = mp;
 
-        double denom = mp M - mq;
+        double denom = mp*M - mq;
         double two_prime = (denom > 0.0) ? (std::real(Pn * std::conj(Qn_ref)) - mq) / denom : 0.0;
         double vn2_val = (c2_ref > 0.0) ? two_prime / std::sqrt(c2_ref) : 0.0;
         result.emplace_back(vn2_val, denom);
@@ -114,7 +114,7 @@ inline std::vector<std::pair<double, double>> vn2_eta(event& ev, cuts& cut, int 
         }
 
         std::complex<double> Pn = Qn_eta[i];
-        double mq = Q0_eta[i];
+        double mp = Q0_eta[i];
         double mq = mp;
 
         double denom = mp*M - mq;

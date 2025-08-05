@@ -15,6 +15,7 @@ set(SOURCES
     src/main.cpp
     src/event.cpp
     src/observables.cpp
+    src/output.cpp
 )
 
 add_executable(ana ${SOURCES})
