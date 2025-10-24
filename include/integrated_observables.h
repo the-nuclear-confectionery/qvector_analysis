@@ -128,7 +128,7 @@ inline std::pair<double, double> vn4(event& ev, cuts& cut, int pid, int n) {
         result = (Qn4 + Q2n2 - 2.0 * Re_term
                  - 2.0 * (2.0 * (Mval - 2) * Qn2 - Mval * (Mval - 3))) / w;
     }
-    double v4 = sqrt(result)
+    double v4 = sqrt(result);
     return {result, w};
 }
 
