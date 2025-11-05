@@ -12,6 +12,7 @@ namespace fs = std::filesystem;
 Output::Output(const config& cfg, const Observables& obs, const std::vector<event>& events)
     : cfg_(cfg), obs_(obs), events_(events) {}
 
+// Build "<output_directory>/<prefix>_ptX-Y_etaZ"
 std::string Output::build_output_path() const {
     char folder[256];
     snprintf(folder, sizeof(folder), "%s_pt%.1f-%.1f_eta%.1f",
@@ -34,6 +35,9 @@ void Output::write_all() const {
     }
 }
 
+// ------------------------------------------------------------
+// Keep legacy writer (single row "centrality=0") for compatibility
+// ------------------------------------------------------------
 void Output::write_integrated(int pid, const std::string& outdir) const {
     std::string filename = outdir + "/integrated_pid" + std::to_string(pid) + ".dat";
     std::ofstream out(filename);
@@ -71,6 +75,9 @@ void Output::write_integrated(int pid, const std::string& outdir) const {
     out << "\n";
 }
 
+// ------------------------------------------------------------
+// Keep legacy differential writer (target directory is parameter)
+// ------------------------------------------------------------
 void Output::write_all_differential(int pid, const std::string& outdir) const {
     std::map<std::string, std::map<int, std::string>> harmonic_groups;
     std::vector<std::string> dndx_names;
@@ -153,4 +160,74 @@ void Output::write_all_differential(int pid, const std::string& outdir) const {
             out << bin_centers[i] << " " << vec[i] << " " << err[i] << "\n";
         }
     }
+}
+
+// ------------------------------------------------------------
+// New: create header once if needed
+// ------------------------------------------------------------
+void Output::ensure_integrated_header_(int pid, const std::string& path) const {
+    if (fs::exists(path)) return;
+
+    std::ofstream out(path);
+    out << std::setprecision(8) << std::scientific;
+
+    std::vector<std::string> order = {"M", "mean_pT", "vn{EP}", "vn{2}", "vn{4}"};
+
+    std::map<std::string, std::pair<double,double>> sorted_obs;
+    for (const auto& [name, val] : obs_.scalar_values) {
+        if (name.find("pid" + std::to_string(pid)) != std::string::npos) {
+            double err = obs_.scalar_errors.count(name) ? obs_.scalar_errors.at(name) : 0.0;
+            sorted_obs[name] = std::make_pair(val, err);
+        }
+    }
+
+    out << "centrality";
+    for (const auto& type : order) {
+        for (const auto& [nm, _] : sorted_obs) {
+            if (nm.find(type + "_") == 0) {
+                std::string label = std::regex_replace(nm, std::regex("vn\\{(\\d+)\\}"), "v$1");
+                out << " " << label << " " << label << "_err";
+            }
+        }
+    }
+    out << "\n";
+}
+
+// ------------------------------------------------------------
+// New: append one row per centrality bin
+// ------------------------------------------------------------
+void Output::append_integrated_row(int pid, const std::string& cut_dir, double centrality_mid) const {
+    const std::string filename = cut_dir + "/integrated_pid" + std::to_string(pid) + ".dat";
+    ensure_integrated_header_(pid, filename);
+
+    std::vector<std::string> order = {"M", "mean_pT", "vn{EP}", "vn{2}", "vn{4}"};
+    std::map<std::string, std::pair<double,double>> sorted_obs;
+    for (const auto& [name, val] : obs_.scalar_values) {
+        if (name.find("pid" + std::to_string(pid)) != std::string::npos) {
+            double err = obs_.scalar_errors.count(name) ? obs_.scalar_errors.at(name) : 0.0;
+            sorted_obs[name] = std::make_pair(val, err);
+        }
+    }
+
+    std::ofstream out(filename, std::ios::app);
+    out << std::setprecision(8) << std::scientific;
+
+    out << centrality_mid;
+    for (const auto& type : order) {
+        for (const auto& [nm, valerr] : sorted_obs) {
+            if (nm.find(type + "_") == 0) {
+                out << " " << valerr.first << " " << valerr.second;
+            }
+        }
+    }
+    out << "\n";
+}
+
+// ------------------------------------------------------------
+// New: write differential into cut_dir/differential/<cent_label>/
+// ------------------------------------------------------------
+void Output::write_all_differential_for_bin(int pid, const std::string& cut_dir, const std::string& cent_label) const {
+    fs::path root = fs::path(cut_dir) / "differential" / cent_label;
+    fs::create_directories(root);
+    write_all_differential(pid, root.string());
 }
