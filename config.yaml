@@ -1,19 +1,31 @@
 #pids: [211, -211, 321, -321]
-pids: []
-max_n: 3
+calculate_charged: true
+pids: [211]
+
+max_n: 5
+
 
 cuts:
   eta_cut: 0.5
-  pt_min: 0.15
-  pt_max: 2.0
+  pt_min: 0.2
+  pt_max: 3.0  
 
-calculate_charged: true
+
+
+centrality:
+  database_path: "/projects/bffs/idanhoni/events_new.db"
+  centrality_dict_path: "/projects/bbkr/centrality_dict/XeXe_5020_sigma.dat"
+  bins: [0,5,10,20,30,40,50,60,70,100]
+
+
+
 
 observables:
   integrated: ["M", "mean_pT", "vn{2}", "vn{EP}", "vn{4}"]
   differential: ["dN/deta", "dN/2piptdptdy", "vn{2}_pt", "vn{2}_eta"]
 
+
 output: 
-  directory: "/u/kpala/git_repos/ana3/build/output"
+  directory: "/u/kpala/git_repos/ana3/build/xexe"
   prefix: "q_vector_analysis"
   format: "dat"

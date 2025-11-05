@@ -11,6 +11,8 @@ include(${ROOT_USE_FILE})
 # --- YAML-CPP ---
 find_package(yaml-cpp REQUIRED)
 
+find_package(SQLite3 REQUIRED)
+
 set(SOURCES
     src/main.cpp
     src/event.cpp
@@ -23,9 +25,11 @@ add_executable(qvector_analysis ${SOURCES})
 target_include_directories(qvector_analysis PRIVATE
     ${ROOT_INCLUDE_DIRS}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${SQLite3_INCLUDE_DIRS} 
 )
 
 target_link_libraries(qvector_analysis
     ${ROOT_LIBRARIES}
     yaml-cpp
+    SQLite::SQLite3      
 )

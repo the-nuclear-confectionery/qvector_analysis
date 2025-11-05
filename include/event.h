@@ -18,6 +18,7 @@ public:
     std::vector<int> available_pids;
     std::vector<double> eta_centers;
     std::vector<double> pt_centers;
+    double centrality = -1.0;
 
     std::map<int, std::vector<std::vector<std::vector<std::complex<double>>>>> Qn; // [pid][n][eta][pt]
     std::map<int, std::vector<std::vector<double>>> Q0;                           // [pid][eta][pt]
